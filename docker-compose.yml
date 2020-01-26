@@ -1,0 +1,63 @@
+version: '3'
+services:
+  # All servercies are on a local docker network inside the daemon
+  # These service names are basically the DNS of the containers NATed network
+  # Maching folder names here for the dev environment is a nice convenience
+  postgres:
+    image: 'postgres:latest'
+  redis:
+    image: 'redis:latest'
+  nginx:
+    # The main router needs to restart if it crashes
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports:
+      # Map port 3050 on the local machine to 80 on the container
+      - '3050:80'
+    depends_on:
+      - api
+      - client
+  # This is a react server in this case...
+  # Using api reference as NGINX uses server as a keyword
+  api:
+    depends_on:
+      - postgres
+    build:
+      dockerfile: Dockerfile.dev
+      # Since this containers dependencies are in the 
+      context: ./server
+    volumes:
+      # Since NPM build in the dockerfile has the correct node_modules, dont use a local version  
+      - /app/node_modules
+      # Take everything from the server directory, and copy it to the app folder of the container
+      # This allows for local development in that server folder.
+      - ./server:/app
+    environment:
+      # See hub.docker.com documentation for default values
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PGUSER=postgres
+      - PGHOST=postgres
+      - PGDATABASE=postgres
+      - PGPASSWORD=postgres_password
+      - PGPORT=5432
+  client:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./client
+    volumes:
+      - /app/node_modules
+      - ./client:/app    
+  worker:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./worker
+    volumes:
+      - /app/node_modules
+      - ./worker:/app    
+    environment:
+    - REDIS_HOST=redis
+    - REDIS_PORT=6379
+      # Note that up to this point, nothing is exposed to the outside world

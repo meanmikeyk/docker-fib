@@ -1,0 +1,18 @@
+first build a dev workflow in a complex world like this...
+
+copy package.json
+npm install
+copy the rest
+
+docker compose will use a volume to share data accross containers
+
+docker build -f Dockerfile.dev .   (test out any given container) 
+docker run containerID  (just a test no -p)
+
+client npm run start
+server npm reun dev
+
+
+This tutorial will go into using travis CI to build something, then push it to dockerhub.
+Updating files to that end.
+
